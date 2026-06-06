@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Box, Drawer, AppBar, Toolbar, List, ListItem, ListItemIcon, ListItemText, IconButton, Typography, Avatar, Menu, MenuItem, Divider } from '@mui/material';
+import { Box, Drawer, AppBar, Toolbar, List, ListItem, ListItemIcon, ListItemText, ListItemButton, IconButton, Typography, Avatar, Menu, MenuItem, Divider } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -23,6 +25,8 @@ export default function MainLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const mdUp = useMediaQuery(theme.breakpoints.up('md'));
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -55,7 +59,7 @@ export default function MainLayout() {
 
   const drawer = (
     <Box>
-      <Toolbar sx={{ bgcolor: '#6B4B9E', color: 'white' }}>
+      <Toolbar sx={{ bgcolor: 'primary.main', color: 'white' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <svg width="32" height="32" viewBox="0 0 120 120">
             <circle cx="60" cy="60" r="30" fill="white" />
@@ -68,22 +72,26 @@ export default function MainLayout() {
       <Divider />
       <List>
         {menuItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            onClick={() => navigate(item.path)}
-            selected={location.pathname === item.path}
-            sx={{
-              '&.Mui-selected': {
-                bgcolor: '#f3f4f6',
-                borderRight: '3px solid #6B4B9E',
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: location.pathname === item.path ? '#6B4B9E' : 'inherit' }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText primary={item.text} />
+          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => {
+                navigate(item.path);
+                if (!mdUp) setMobileOpen(false);
+              }}
+              selected={location.pathname === item.path}
+              sx={{
+                '&.Mui-selected': {
+                  bgcolor: 'primary.100',
+                  borderRight: (t) => `3px solid ${t.palette.primary.main}`,
+                },
+                px: 2,
+              }}
+            >
+              <ListItemIcon sx={{ color: location.pathname === item.path ? 'primary.main' : 'inherit' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
           </ListItem>
         ))}
       </List>
@@ -147,24 +155,14 @@ export default function MainLayout() {
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
       >
         <Drawer
-          variant="temporary"
-          open={mobileOpen}
+          variant={mdUp ? 'permanent' : 'temporary'}
+          open={mdUp ? true : mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{ keepMounted: true }}
           sx={{
-            display: { xs: 'block', sm: 'none' },
+            display: { xs: mdUp ? 'none' : 'block', md: 'block' },
             '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-          open
         >
           {drawer}
         </Drawer>
@@ -174,9 +172,9 @@ export default function MainLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 2,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: 8,
+          mt: 7,
         }}
       >
         <Outlet />

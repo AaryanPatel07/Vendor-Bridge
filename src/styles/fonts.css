@@ -1,0 +1,7 @@
+/* Global font stack: Inter for body, Poppins for headings */
+body, input, textarea, select, button {
+	font-family: 'Inter', 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+h1,h2,h3,h4,h5,h6 {
+	font-family: 'Poppins', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}

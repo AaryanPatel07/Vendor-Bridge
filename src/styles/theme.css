@@ -134,7 +134,8 @@
   */
 
   html {
-    font-size: var(--font-size);
+    /* Responsive base font size: scales between 14px and 16px */
+    font-size: clamp(14px, 1.2vw, 16px);
   }
 
   h1 {
