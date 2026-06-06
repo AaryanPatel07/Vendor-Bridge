@@ -7,8 +7,12 @@ export interface Vendor {
   phone: string;
   category: string;
   gst: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'preferred' | 'blacklisted';
   rating: number;
+  responseTime?: string;
+  ordersWon?: number;
+  onTimeDelivery?: number;
+  avatar?: string;
 }
 
 export interface RFQItem {
@@ -117,9 +121,118 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // Mock initial data
 const mockVendors: Vendor[] = [
-  { id: '1', name: 'Tech Solutions Inc', email: 'contact@techsol.com', phone: '+1-555-0101', category: 'IT Services', gst: 'GST123456', status: 'active', rating: 4.5 },
-  { id: '2', name: 'Office Supplies Co', email: 'sales@officesupply.com', phone: '+1-555-0102', category: 'Office Supplies', gst: 'GST234567', status: 'active', rating: 4.2 },
-  { id: '3', name: 'Industrial Parts Ltd', email: 'info@indparts.com', phone: '+1-555-0103', category: 'Manufacturing', gst: 'GST345678', status: 'active', rating: 4.8 },
+  {
+    id: 'V-001',
+    name: 'TechSupply Co.',
+    email: 'contact@techsupply.com',
+    phone: '+1-555-0101',
+    category: 'IT Services',
+    gst: 'GST123456',
+    rating: 4.9,
+    responseTime: '1.2h',
+    ordersWon: 124,
+    onTimeDelivery: 98,
+    status: 'preferred',
+    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=TS',
+  },
+  {
+    id: 'V-002',
+    name: 'Global Office Pro',
+    email: 'sales@globaloffice.com',
+    phone: '+1-555-0102',
+    category: 'Office Supplies',
+    gst: 'GST234567',
+    rating: 4.7,
+    responseTime: '2.1h',
+    ordersWon: 87,
+    onTimeDelivery: 95,
+    status: 'active',
+    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=GO',
+  },
+  {
+    id: 'V-003',
+    name: 'SwiftSourcing Ltd',
+    email: 'info@swiftsourcing.com',
+    phone: '+1-555-0103',
+    category: 'Logistics',
+    gst: 'GST345678',
+    rating: 4.6,
+    responseTime: '3.4h',
+    ordersWon: 56,
+    onTimeDelivery: 93,
+    status: 'active',
+    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=SS',
+  },
+  {
+    id: 'V-004',
+    name: 'Apex Furnishings',
+    email: 'support@apexfurnish.com',
+    phone: '+1-555-0104',
+    category: 'Manufacturing',
+    gst: 'GST456789',
+    rating: 4.4,
+    responseTime: '4.0h',
+    ordersWon: 42,
+    onTimeDelivery: 89,
+    status: 'inactive',
+    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=AF',
+  },
+  {
+    id: 'V-005',
+    name: 'CoreIT Solutions',
+    email: 'hello@coreit.io',
+    phone: '+1-555-0105',
+    category: 'Software',
+    gst: 'GST567890',
+    rating: 4.2,
+    responseTime: '5.5h',
+    ordersWon: 31,
+    onTimeDelivery: 86,
+    status: 'blacklisted',
+    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=CI',
+  },
+  {
+    id: 'V-006',
+    name: 'Zenith Logistics',
+    email: 'ops@zenithlog.com',
+    phone: '+1-555-0106',
+    category: 'Logistics',
+    gst: 'GST678901',
+    rating: 4.8,
+    responseTime: '1.5h',
+    ordersWon: 92,
+    onTimeDelivery: 97,
+    status: 'preferred',
+    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=ZL',
+  },
+  {
+    id: 'V-007',
+    name: 'BuildRight Mfg',
+    email: 'info@buildright.com',
+    phone: '+1-555-0107',
+    category: 'Manufacturing',
+    gst: 'GST789012',
+    rating: 4.5,
+    responseTime: '2.8h',
+    ordersWon: 64,
+    onTimeDelivery: 91,
+    status: 'active',
+    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=BR',
+  },
+  {
+    id: 'V-008',
+    name: 'PaperPlane Supplies',
+    email: 'orders@paperplane.com',
+    phone: '+1-555-0108',
+    category: 'Office Supplies',
+    gst: 'GST890123',
+    rating: 4.3,
+    responseTime: '3.2h',
+    ordersWon: 48,
+    onTimeDelivery: 94,
+    status: 'active',
+    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=PP',
+  },
 ];
 
 const mockRFQs: RFQ[] = [
