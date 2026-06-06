@@ -1,18 +1,29 @@
-import { useState, useRef } from 'react';
-import {
-  Box, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Button, Chip, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField
-} from '@mui/material';
-import { Add, Download, Print, Email, Visibility } from '@mui/icons-material';
+import { useState } from 'react';
 import { useData } from '../../context/DataContext';
-import jsPDF from 'jspdf';
+import { ModuleContainer, PageHeader, KPICard, sharedStyles } from '../ui/ModuleShared';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
+
+const AddIcon = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>;
+const PrintIcon = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>;
+const SearchIcon = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>;
 
 export default function InvoiceGeneration() {
   const { purchaseOrders, vendors, invoices, addInvoice } = useData();
-  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-  const [emailDialog, setEmailDialog] = useState(false);
-  const [emailAddress, setEmailAddress] = useState('');
-  const invoiceRef = useRef<HTMLDivElement>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const invoiceKPIs = [
+    { label: 'Total Invoiced', value: `$${(invoices.reduce((s, i) => s + i.total, 0) / 1000).toFixed(1)}K`, trend: '+22%', trendUp: true, icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> },
+    { label: 'Pending Payment', value: invoices.filter(i => i.status !== 'paid').length, trend: '+3', trendUp: false, icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+    { label: 'Paid Invoices', value: invoices.filter(i => i.status === 'paid').length, trend: '+15%', trendUp: true, icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+    { label: 'Invoicing Accuracy', value: '99.4%', trend: '+0.2%', trendUp: true, icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> },
+  ];
+
+  const agingData = [
+    { range: '0-30 Days', count: 12, color: '#6366f1' },
+    { range: '31-60 Days', count: 5, color: '#f59e0b' },
+    { range: '61-90 Days', count: 2, color: '#ef4444' },
+    { range: '90+ Days', count: 1, color: '#7f1d1d' },
+  ];
 
   const handleCreateInvoice = (po: any) => {
     addInvoice({
@@ -24,337 +35,138 @@ export default function InvoiceGeneration() {
       total: po.total,
       status: 'draft',
     });
-    alert('Invoice created successfully!');
-  };
-
-  const handleDownloadPDF = (invoice: any) => {
-    const doc = new jsPDF();
-    const vendor = vendors.find(v => v.id === invoice.vendorId);
-
-    doc.setFontSize(20);
-    doc.text('INVOICE', 105, 20, { align: 'center' });
-
-    doc.setFontSize(12);
-    doc.text(`Invoice #: ${invoice.invoiceNumber}`, 20, 40);
-    doc.text(`Date: ${new Date(invoice.createdAt).toLocaleDateString()}`, 20, 50);
-    doc.text(`Vendor: ${vendor?.name}`, 20, 60);
-
-    doc.text('Items:', 20, 80);
-    let y = 90;
-    invoice.items.forEach((item: any) => {
-      doc.setFontSize(10);
-      doc.text(`${item.productName} - Qty: ${item.quantity} - $${item.total}`, 20, y);
-      y += 10;
-    });
-
-    y += 10;
-    doc.setFontSize(12);
-    doc.text(`Subtotal: $${invoice.subtotal.toLocaleString()}`, 20, y);
-    doc.text(`Tax (18%): $${invoice.tax.toFixed(2)}`, 20, y + 10);
-    doc.setFontSize(14);
-    doc.text(`Total: $${invoice.total.toLocaleString()}`, 20, y + 20);
-
-    doc.save(`invoice-${invoice.invoiceNumber}.pdf`);
-  };
-
-  const handlePrint = (invoice: any) => {
-    const vendor = vendors.find(v => v.id === invoice.vendorId);
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const content = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Invoice ${invoice.invoiceNumber}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; }
-          h1 { text-align: center; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-          th { background-color: #f9fafb; }
-          .totals { margin-top: 20px; text-align: right; }
-        </style>
-      </head>
-      <body>
-        <h1>INVOICE</h1>
-        <p><strong>Invoice #:</strong> ${invoice.invoiceNumber}</p>
-        <p><strong>Date:</strong> ${new Date(invoice.createdAt).toLocaleDateString()}</p>
-        <p><strong>Vendor:</strong> ${vendor?.name}</p>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Quantity</th>
-              <th>Unit Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${invoice.items.map((item: any) => `
-              <tr>
-                <td>${item.productName}</td>
-                <td>${item.quantity}</td>
-                <td>$${item.unitPrice}</td>
-                <td>$${item.total}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-
-        <div class="totals">
-          <p><strong>Subtotal:</strong> $${invoice.subtotal.toLocaleString()}</p>
-          <p><strong>Tax (18%):</strong> $${invoice.tax.toFixed(2)}</p>
-          <p style="font-size: 18px;"><strong>Total:</strong> $${invoice.total.toLocaleString()}</p>
-        </div>
-      </body>
-      </html>
-    `;
-
-    printWindow.document.write(content);
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  const handleSendEmail = (invoice: any) => {
-    setSelectedInvoice(invoice);
-    setEmailDialog(true);
-  };
-
-  const handleEmailSubmit = () => {
-    alert(`Invoice sent to ${emailAddress} successfully!`);
-    setEmailDialog(false);
-    setEmailAddress('');
   };
 
   return (
-    <Box>
-      <Typography variant="h5" gutterBottom>Invoice Generation</Typography>
+    <ModuleContainer>
+      <PageHeader 
+        title="Invoice Management"
+        description="Monitor vendor billing, manage payment cycles, and track accounts payable."
+        primaryAction={{
+          label: "Print Report",
+          onClick: () => {},
+          icon: <PrintIcon />
+        }}
+      />
 
-      <Paper sx={{ p: 3, mt: 3, mb: 3 }}>
-        <Typography variant="body1">
-          {invoices.length} invoice(s) generated
-        </Typography>
-      </Paper>
+      {/* KPI Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {invoiceKPIs.map((kpi, idx) => (
+          <KPICard key={kpi.label} {...kpi} index={idx} />
+        ))}
+      </div>
 
-      {purchaseOrders.length > 0 && (
-        <Paper sx={{ p: 3, mb: 3, bgcolor: '#eff6ff' }}>
-          <Typography variant="h6" gutterBottom>Purchase Orders Ready for Invoice</Typography>
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>PO Number</TableCell>
-                  <TableCell>Vendor</TableCell>
-                  <TableCell>Total</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {purchaseOrders.map((po) => {
-                  const vendor = vendors.find(v => v.id === po.vendorId);
-                  const hasInvoice = invoices.some(inv => inv.poId === po.id);
+      {/* Analytics Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className={sharedStyles.card + " lg:col-span-2 h-[340px]"}>
+          <h3 className="text-xs font-bold text-white/60 uppercase tracking-widest mb-6">Invoicing Volume (Last 6 Months)</h3>
+          <div className="flex-1 min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[{m: 'Jan', v: 42000}, {m: 'Feb', v: 38000}, {m: 'Mar', v: 51000}, {m: 'Apr', v: 46000}, {m: 'May', v: 58000}, {m: 'Jun', v: 62000}]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="m" stroke="rgba(255,255,255,0.3)" fontSize={10} axisLine={false} tickLine={false} />
+                <YAxis stroke="rgba(255,255,255,0.3)" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v/1000}k`} />
+                <RechartsTooltip contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                <Bar dataKey="v" fill="#a855f7" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className={sharedStyles.card + " h-[340px]"}>
+          <h3 className="text-xs font-bold text-white/60 uppercase tracking-widest mb-6">Accounts Payable Aging</h3>
+          <div className="flex-1 min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={agingData} layout="vertical">
+                <XAxis type="number" hide />
+                <YAxis dataKey="range" type="category" stroke="rgba(255,255,255,0.3)" fontSize={10} axisLine={false} tickLine={false} />
+                <RechartsTooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  {agingData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
 
-                  return (
-                    <TableRow key={po.id}>
-                      <TableCell>{po.poNumber}</TableCell>
-                      <TableCell>{vendor?.name}</TableCell>
-                      <TableCell>${po.total.toLocaleString()}</TableCell>
-                      <TableCell>
-                        {hasInvoice ? (
-                          <Chip label="Invoice Created" size="small" color="success" />
-                        ) : (
-                          <Button
-                            size="small"
-                            variant="contained"
-                            startIcon={<Add />}
-                            onClick={() => handleCreateInvoice(po)}
-                          >
-                            Generate Invoice
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-      )}
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ bgcolor: '#f9fafb' }}>
-              <TableCell>Invoice Number</TableCell>
-              <TableCell>Vendor</TableCell>
-              <TableCell>Subtotal</TableCell>
-              <TableCell>Tax (18%)</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {invoices.map((invoice) => {
-              const vendor = vendors.find(v => v.id === invoice.vendorId);
-              return (
-                <TableRow key={invoice.id} hover>
-                  <TableCell>{invoice.invoiceNumber}</TableCell>
-                  <TableCell>{vendor?.name}</TableCell>
-                  <TableCell>${invoice.subtotal.toLocaleString()}</TableCell>
-                  <TableCell>${invoice.tax.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Typography variant="h6">
-                      ${invoice.total.toLocaleString()}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(invoice.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={invoice.status}
-                      size="small"
-                      color={
-                        invoice.status === 'paid'
-                          ? 'success'
-                          : invoice.status === 'sent'
-                          ? 'info'
-                          : 'default'
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      <Button
-                        size="small"
-                        startIcon={<Visibility />}
-                        onClick={() => setSelectedInvoice(invoice)}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        size="small"
-                        startIcon={<Download />}
-                        onClick={() => handleDownloadPDF(invoice)}
-                      >
-                        PDF
-                      </Button>
-                      <Button
-                        size="small"
-                        startIcon={<Print />}
-                        onClick={() => handlePrint(invoice)}
-                      >
-                        Print
-                      </Button>
-                      <Button
-                        size="small"
-                        startIcon={<Email />}
-                        onClick={() => handleSendEmail(invoice)}
-                      >
-                        Email
-                      </Button>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {invoices.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                    No invoices yet
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <Dialog open={Boolean(selectedInvoice) && !emailDialog} onClose={() => setSelectedInvoice(null)} maxWidth="md" fullWidth>
-        <DialogTitle>Invoice Details - {selectedInvoice?.invoiceNumber}</DialogTitle>
-        <DialogContent>
-          {selectedInvoice && (
-            <Box ref={invoiceRef}>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Vendor</Typography>
-                  <Typography variant="body1">
-                    {vendors.find(v => v.id === selectedInvoice.vendorId)?.name}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Date</Typography>
-                  <Typography variant="body1">
-                    {new Date(selectedInvoice.createdAt).toLocaleDateString()}
-                  </Typography>
-                </Grid>
-              </Grid>
-
-              <TableContainer sx={{ mt: 3 }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Item</TableCell>
-                      <TableCell align="right">Quantity</TableCell>
-                      <TableCell align="right">Unit Price</TableCell>
-                      <TableCell align="right">Total</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {selectedInvoice.items.map((item: any, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{item.productName}</TableCell>
-                        <TableCell align="right">{item.quantity}</TableCell>
-                        <TableCell align="right">${item.unitPrice}</TableCell>
-                        <TableCell align="right">${item.total}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              <Box sx={{ mt: 3, textAlign: 'right' }}>
-                <Typography variant="body2">Subtotal: ${selectedInvoice.subtotal.toLocaleString()}</Typography>
-                <Typography variant="body2">Tax (18%): ${selectedInvoice.tax.toFixed(2)}</Typography>
-                <Typography variant="h6">Total: ${selectedInvoice.total.toLocaleString()}</Typography>
-              </Box>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedInvoice(null)}>Close</Button>
-          <Button startIcon={<Download />} onClick={() => handleDownloadPDF(selectedInvoice)}>
-            Download PDF
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={emailDialog} onClose={() => setEmailDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Send Invoice via Email</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Email Address"
-            type="email"
-            value={emailAddress}
-            onChange={(e) => setEmailAddress(e.target.value)}
-            placeholder="recipient@example.com"
-            sx={{ mt: 2 }}
+      {/* Control Panel */}
+      <div className="rounded-2xl p-4 flex flex-wrap items-center gap-4 bg-white/[0.05] border border-white/10">
+        <div className="relative flex-1 min-w-[280px]">
+          <div className="absolute inset-y-0 left-3.5 flex items-center text-white/20">
+            <SearchIcon />
+          </div>
+          <input 
+            type="text" 
+            placeholder="Search invoice numbers, vendors, or amounts..."
+            className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-indigo-500/50 transition-all"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEmailDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleEmailSubmit} disabled={!emailAddress}>
-            Send Email
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+        </div>
+        <div className="flex items-center gap-2">
+          <select className="bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-xs font-black text-white/60 focus:outline-none hover:bg-white/10 transition-all cursor-pointer">
+            <option>All Invoices</option>
+            <option>Draft</option>
+            <option>Sent</option>
+            <option>Paid</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Main Invoice Table */}
+      <div className="rounded-2xl overflow-hidden border border-white/10 bg-white/[0.02] flex flex-col">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left border-collapse min-w-[1100px]">
+            <thead>
+              <tr className={sharedStyles.tableHeader}>
+                <th className="px-6 py-4.5 text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Invoice #</th>
+                <th className="px-6 py-4.5 text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Vendor</th>
+                <th className="px-6 py-4.5 text-[10px] font-black text-white/40 uppercase tracking-[0.2em] text-right">Value</th>
+                <th className="px-6 py-4.5 text-[10px] font-black text-white/40 uppercase tracking-[0.2em] text-center">Date</th>
+                <th className="px-6 py-4.5 text-[10px] font-black text-white/40 uppercase tracking-[0.2em] text-center">Status</th>
+                <th className="px-6 py-4.5 text-[10px] font-black text-white/40 uppercase tracking-[0.2em] text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {invoices.map((invoice) => {
+                const vendor = vendors.find(v => v.id === invoice.vendorId);
+                return (
+                  <tr key={invoice.id} className={sharedStyles.tableRow}>
+                    <td className="px-6 py-5">
+                      <span className="text-xs font-black text-indigo-400">{invoice.invoiceNumber}</span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <p className="text-sm font-black text-white">{vendor?.name}</p>
+                      <p className="text-[10px] text-white/30 uppercase font-black">{vendor?.category}</p>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <span className="text-sm font-black text-white">${invoice.total.toLocaleString()}</span>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <span className="text-xs font-bold text-white/70">{new Date(invoice.createdAt).toLocaleDateString()}</span>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <span className={sharedStyles.statusBadge(invoice.status === 'paid' ? 'emerald' : invoice.status === 'sent' ? 'indigo' : 'slate')}>
+                        {invoice.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button className="px-4 py-1.5 rounded-lg text-[10px] font-black text-white/60 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest">
+                          PDF
+                        </button>
+                        <button className="px-4 py-1.5 rounded-lg text-[10px] font-black text-white/60 hover:text-white hover:bg-white/10 transition-all uppercase tracking-widest">
+                          View
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ModuleContainer>
   );
 }
