@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material';
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
 import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
+import Loader from './components/common/Loader';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
 import MainLayout from './components/layout/MainLayout';
@@ -89,8 +91,11 @@ let theme = createTheme({
 theme = responsiveFontSizes(theme);
 
 export default function App() {
+  const [loading, setLoading] = useState(true);
+
   return (
     <ThemeProvider theme={theme}>
+      {loading && <Loader onComplete={() => setLoading(false)} />}
       <AuthProvider>
         <DataProvider>
           <BrowserRouter>

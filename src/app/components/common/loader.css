@@ -1,0 +1,260 @@
+@import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&display=swap');
+
+/* ============ LOADER OVERLAY ============ */
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Background image - matches hero section */
+.loader-bg-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: scale(1.1);
+  animation: bgZoom 1.5s ease-out forwards;
+}
+
+@keyframes bgZoom {
+  0% {
+    transform: scale(1.2);
+    filter: blur(10px);
+  }
+  100% {
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Dark gradient overlay - same as hero */
+.loader-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(15, 10, 26, 1) 100%
+  );
+  z-index: 1;
+}
+
+/* ============ CONTENT ============ */
+.loader-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+
+/* ============ LOGO ============ */
+.loader-logo-wrapper {
+  text-align: center;
+  overflow: hidden;
+}
+
+.loader-logo {
+  font-family: 'Syncopate', sans-serif;
+  font-size: clamp(4rem, 18vw, 14rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: whitesmoke;
+  margin: 0;
+  opacity: 0;
+  transform: translateY(60px) scale(0.9);
+  animation: logoReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+
+@keyframes logoReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(60px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Tagline */
+.loader-tagline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 1rem;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: taglineReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+}
+
+@keyframes taglineReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tagline-text {
+  font-family: 'Syncopate', sans-serif;
+  font-size: clamp(0.6rem, 1.5vw, 0.9rem);
+  font-weight: 400;
+  letter-spacing: 4px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tagline-dot {
+  width: 4px;
+  height: 4px;
+  background: #A855F7;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #A855F7, 0 0 20px rgba(168, 85, 247, 0.5);
+}
+
+/* ============ PROGRESS BAR ============ */
+.loader-progress {
+  width: 120px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  opacity: 0;
+  animation: progressFadeIn 0.4s ease 0.6s forwards;
+}
+
+@keyframes progressFadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+.loader-progress-bar {
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #A855F7, #EC4899, #A855F7);
+  background-size: 200% 100%;
+  border-radius: 2px;
+  animation: progressFill 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards, 
+             progressShimmer 1s linear infinite;
+}
+
+@keyframes progressFill {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes progressShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ============ EXIT ANIMATION ============ */
+.loader-overlay.exiting {
+  animation: overlayExit 0.4s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+
+@keyframes overlayExit {
+  0% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+.loader-overlay.exiting .loader-logo {
+  animation: logoExit 0.3s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+
+.loader-overlay.exiting .loader-tagline {
+  animation: taglineExit 0.25s ease-out forwards;
+}
+
+.loader-overlay.exiting .loader-progress {
+  animation: progressExit 0.2s ease-out forwards;
+}
+
+@keyframes logoExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(1.05);
+  }
+}
+
+@keyframes taglineExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes progressExit {
+  0% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 768px) {
+  .loader-logo {
+    font-size: 3.5rem;
+  }
+  
+  .loader-tagline {
+    gap: 8px;
+  }
+  
+  .tagline-text {
+    font-size: 0.55rem;
+    letter-spacing: 2px;
+  }
+  
+  .tagline-dot {
+    width: 3px;
+    height: 3px;
+  }
+  
+  .loader-progress {
+    width: 80px;
+  }
+}
